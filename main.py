@@ -1,3 +1,4 @@
+import copy
 import heapq
 import math
 import random
@@ -136,7 +137,7 @@ class Task:
             sub_task.execute_end = False
         self.execution_time = current_time
         free_intervals = calculate_free_space(executing_space, self.execution_time)
-        print("Free Intervals:", free_intervals)
+        return free_intervals
 
 
 class SubTask:
@@ -151,105 +152,139 @@ class SubTask:
         self.execute_end = False
 
 
+def use_free_space(task, free_intervals):
+    for sub_task in task.sub_tasks:
+        for free_interval in free_intervals:
+            if sub_task.space <= free_interval[1] and sub_task.configuration_time <= (
+                    free_interval[0][1] - free_interval[0][0]):
+                free_interval[0][0] += sub_task.configuration_time
+                if free_interval[0][0] == free_interval[0][1]:
+                    free_intervals.remove(free_interval)
+                sub_task.configuration_time = 0
+                break
+
+
 class EDFScheduler:
     def __init__(self):
         self.bag_of_tasks = []
         self.ready_tasks = []
         self.current_time = 0
+        self.save = []
 
     def add_task(self, task):
         heapq.heappush(self.bag_of_tasks, task)
 
     def run_default(self, total_time):
-        for task in self.bag_of_tasks:
-            print(task)
-        print("-----------------------------------------------------------------\n")
+        ready_tasks = copy.deepcopy(self.ready_tasks)
+        bag_of_tasks = copy.deepcopy(self.bag_of_tasks)
+        self.current_time = 0
+        # for task in bag_of_tasks:
+        #     print(task)
+        # print("-----------------------------------------------------------------\n")
         number_of_missed_tasks = 0
         number_of_all_executed_tasks = 0
         while self.current_time < total_time:
             # ready task is for tasks which their request is received
-            for task in self.bag_of_tasks:
+            for task in bag_of_tasks:
                 if self.current_time >= task.next_period:
-                    heapq.heappush(self.ready_tasks, task)
-            if not self.ready_tasks:
-                min_task = min(self.bag_of_tasks, key=lambda task2: task2.next_period)
+                    heapq.heappush(ready_tasks, task)
+            if not ready_tasks:
+                min_task = min(bag_of_tasks, key=lambda task2: task2.next_period)
                 self.current_time = min_task.next_period
                 continue
             # sort to find minimum deadline
-            self.ready_tasks.sort()
-            task = heapq.heappop(self.ready_tasks)
+            ready_tasks.sort()
+            task = heapq.heappop(ready_tasks)
             if self.current_time + task.execution_time >= task.next_deadline:
-                print(f"Missed deadline for Task {task.name} at time {self.current_time}\n")
+                # print(f"Missed deadline for Task {task.name} at time {self.current_time}\n")
+                # if self.current_time < task.next_deadline:
+                #     self.current_time = task.next_deadline
                 task.next_period += task.period
                 task.next_deadline += task.deadline
                 number_of_missed_tasks += 1
             else:
-                print(f"task before execution:\n{task}")
-                print(f"Running Task {task.name} at time {self.current_time}\n")
-                task.execute()
+                # print(f"task before execution:\n{task}")
+                # print(f"Running Task {task.name} at time {self.current_time}\n")
+                task.execute_default()
                 task.next_deadline += task.deadline
                 task.next_period += task.period
                 self.current_time += task.execution_time
-                print(f"current time after execution: {self.current_time}\n")
-                print(f"task after execution:\n{task}")
+                # print(f"current time after execution: {self.current_time}\n")
+                # print(f"task after execution:\n{task}")
             number_of_all_executed_tasks += 1
-            self.ready_tasks.clear()
-            print("---------------------------------------------------------------\n")
-        print(f"missed:  {number_of_missed_tasks}")
-        print(f"all: {number_of_all_executed_tasks}")
-        print(f"percentage: {number_of_missed_tasks * 100 / number_of_all_executed_tasks}")
+            ready_tasks.clear()
+            # print("---------------------------------------------------------------\n")
+        self.save.append(number_of_missed_tasks)
+        self.save.append(number_of_all_executed_tasks)
+        self.save.append(number_of_missed_tasks * 100 / number_of_all_executed_tasks)
 
     def run_advanced(self, total_time):
-        for task in self.bag_of_tasks:
-            print(task)
-        print("-----------------------------------------------------------------\n")
+        free_intervals = []
+        ready_tasks = copy.deepcopy(self.ready_tasks)
+        bag_of_tasks = copy.deepcopy(self.bag_of_tasks)
+        self.current_time = 0
+        # for task in bag_of_tasks:
+        #     print(task)
+        # print("-----------------------------------------------------------------\n")
         number_of_missed_tasks = 0
         number_of_all_executed_tasks = 0
         while self.current_time < total_time:
+            task_copy = None
             # ready task is for tasks which their request is received
-            for task in self.bag_of_tasks:
+            for task in bag_of_tasks:
                 if self.current_time >= task.next_period:
-                    heapq.heappush(self.ready_tasks, task)
-            if not self.ready_tasks:
-                min_task = min(self.bag_of_tasks, key=lambda task2: task2.next_period)
+                    heapq.heappush(ready_tasks, task)
+            if not ready_tasks:
+                min_task = min(bag_of_tasks, key=lambda task2: task2.next_period)
                 self.current_time = min_task.next_period
                 continue
             # sort to find minimum deadline
-            self.ready_tasks.sort()
-            task = heapq.heappop(self.ready_tasks)
+            ready_tasks.sort()
+            task = heapq.heappop(ready_tasks)
+
+            task_copy = copy.deepcopy(task)
+            use_free_space(task, free_intervals)
+            free_intervals = task.execute_advanced()
+
             if self.current_time + task.execution_time >= task.next_deadline:
-                print(f"Missed deadline for Task {task.name} at time {self.current_time}\n")
+                # print(f"Missed deadline for Task {task.name} at time {self.current_time}\n")
+                # if self.current_time < task.next_deadline:
+                #     self.current_time = task.next_deadline
                 task.next_period += task.period
                 task.next_deadline += task.deadline
                 number_of_missed_tasks += 1
             else:
-                print(f"task before execution:\n{task}")
-                print(f"Running Task {task.name} at time {self.current_time}\n")
-                task.execute_advanced()
+                # print(f"task before execution:\n{task}")
+                # print(f"Running Task {task.name} at time {self.current_time}\n")
+
+                self.current_time += task.execution_time
                 task.next_deadline += task.deadline
                 task.next_period += task.period
-                self.current_time += task.execution_time
-                print(f"current time after execution: {self.current_time}\n")
-                print(f"task after execution:\n{task}")
+                # print(f"current time after execution: {self.current_time}\n")
+                # print(f"task after execution:\n{task}")
+
+            task.sub_tasks = task_copy.sub_tasks
             number_of_all_executed_tasks += 1
-            self.ready_tasks.clear()
-            print("---------------------------------------------------------------\n")
-        print(f"missed:  {number_of_missed_tasks}")
-        print(f"all: {number_of_all_executed_tasks}")
-        print(f"percentage: {number_of_missed_tasks * 100 / number_of_all_executed_tasks}")
+            ready_tasks.clear()
+            # print("---------------------------------------------------------------\n")
+        self.save.append(number_of_missed_tasks)
+        self.save.append(number_of_all_executed_tasks)
+        self.save.append(number_of_missed_tasks * 100 / number_of_all_executed_tasks)
 
 
 def create_random_task():
     bag_of_tasks = []
-    while len(bag_of_tasks) != 5:
-        period = random.randint(7, 20) * 5
+    tasks_numbers = random.randint(3, 10)
+    while len(bag_of_tasks) != tasks_numbers:
+        period = random.randint(7, 15) * 5
         deadline = period
         task = Task("Task " + chr(random.randint(65, 90)), period=period, deadline=deadline)
         subtasks = []
-        for i in range(5):
-            configuration_time = random.randint(1, 5)
-            execute_time = random.randint(5, 10)
-            space = random.randint(10, 70)
+        subtasks_numbers = random.randint(3, 8)
+        for i in range(subtasks_numbers):
+            configuration_time = random.randint(3, 8)
+            execute_time = random.randint(3, 10)
+            space = random.randint(5, 70)
             subtask = SubTask(task, "Subtask " + chr(random.randint(65, 90)), configuration_time, execute_time, space)
             subtasks.append(subtask)
         task.sub_tasks = subtasks
@@ -260,14 +295,25 @@ def create_random_task():
 
 
 def main():
-    bag_of_tasks = create_random_task()
-    scheduler = EDFScheduler()
-    for task in bag_of_tasks:
-        scheduler.add_task(task)
     lcm = LCM()
-    times = [task.period for task in bag_of_tasks]
-    total_time = lcm.lcm_of_array(times)
-    scheduler.run_advanced(total_time)
+    for i in range(10):
+        bag_of_tasks = create_random_task()
+        scheduler = EDFScheduler()
+        for task in bag_of_tasks:
+            scheduler.add_task(task)
+        times = [task.period for task in bag_of_tasks]
+        total_time = lcm.lcm_of_array(times)
+        scheduler.run_default(total_time)
+        scheduler.run_advanced(total_time)
+
+        print(f"missed default:  {scheduler.save[0]}")
+        print(f"all default: {scheduler.save[1]}")
+        print(f"percentage default: {scheduler.save[2]}")
+        print(f"missed advance:  {scheduler.save[3]}")
+        print(f"all advance: {scheduler.save[4]}")
+        print(f"percentage advance: {scheduler.save[5]}")
+        print("------------------------------------------------------")
+
 
 def calculate_free_space(intervals, total_time):
     interval_space = [100] * (total_time + 1)
@@ -295,6 +341,7 @@ def calculate_free_space(intervals, total_time):
     free_intervals.append([[current_interval_start, total_time], current_interval_space])
 
     return free_intervals
+
 
 if __name__ == '__main__':
     main()
