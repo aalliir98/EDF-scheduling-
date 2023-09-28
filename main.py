@@ -58,7 +58,14 @@ class Task:
                 if sub_task.space <= space:
                     space -= sub_task.space
                     current_time += sub_task.configuration_time
-                    sub_task.end_time = current_time + sub_task.execute_time
+                    if sub_task.independent_subtasks:
+                        max_subtask = max(sub_task.independent_subtasks, key=lambda subtask: subtask.end_time)
+                        if max_subtask.end_time > current_time:
+                            sub_task.end_time = max_subtask.end_time + sub_task.execute_time
+                        else:
+                            sub_task.end_time = current_time + sub_task.execute_time
+                    else:
+                        sub_task.end_time = current_time + sub_task.execute_time
                     sub_task.execute_start = True
                     executing_subtasks.append(sub_task)
 
@@ -140,6 +147,12 @@ class Task:
         return free_intervals
 
 
+def get_subtask_by_name(subtask_list, name):
+    for subtask in subtask_list:
+        if subtask.name == name:
+            return subtask
+    return None
+
 class SubTask:
     def __init__(self, task, name, configuration_time, execute_time, space):
         self.task = task
@@ -150,6 +163,7 @@ class SubTask:
         self.end_time = 0
         self.execute_start = False
         self.execute_end = False
+        self.independent_subtasks = []
 
 
 def use_free_space(task, free_intervals):
@@ -197,8 +211,6 @@ class EDFScheduler:
             task = heapq.heappop(ready_tasks)
             if self.current_time + task.execution_time >= task.next_deadline:
                 # print(f"Missed deadline for Task {task.name} at time {self.current_time}\n")
-                # if self.current_time < task.next_deadline:
-                #     self.current_time = task.next_deadline
                 task.next_period += task.period
                 task.next_deadline += task.deadline
                 number_of_missed_tasks += 1
@@ -248,8 +260,6 @@ class EDFScheduler:
 
             if self.current_time + task.execution_time >= task.next_deadline:
                 # print(f"Missed deadline for Task {task.name} at time {self.current_time}\n")
-                # if self.current_time < task.next_deadline:
-                #     self.current_time = task.next_deadline
                 task.next_period += task.period
                 task.next_deadline += task.deadline
                 number_of_missed_tasks += 1
@@ -274,18 +284,28 @@ class EDFScheduler:
 
 def create_random_task():
     bag_of_tasks = []
-    tasks_numbers = random.randint(3, 10)
+    tasks_numbers = random.randint(2, 10)
     while len(bag_of_tasks) != tasks_numbers:
-        period = random.randint(7, 15) * 5
+        period = random.randint(7, 20) * 5
         deadline = period
         task = Task("Task " + chr(random.randint(65, 90)), period=period, deadline=deadline)
         subtasks = []
-        subtasks_numbers = random.randint(3, 8)
+        subtasks_numbers = random.randint(1, 10)
         for i in range(subtasks_numbers):
-            configuration_time = random.randint(3, 8)
-            execute_time = random.randint(3, 10)
-            space = random.randint(5, 70)
-            subtask = SubTask(task, "Subtask " + chr(random.randint(65, 90)), configuration_time, execute_time, space)
+            configuration_time = random.randint(1, 10)
+            execute_time = random.randint(8, 15)
+            space = random.randint(1, 30)
+            subtask = SubTask(task, "Subtask " + chr(65 + i), configuration_time, execute_time, space)
+            if i != 0:
+                num_samples = random.randint(0, i - 1)
+                numbers_range = list(range(0, i))
+                for _ in range(num_samples):
+                    if numbers_range:  # Check if there are still numbers to choose from
+                        random_number = random.sample(numbers_range, 1)[0]
+                        numbers_range.remove(random_number)  # Remove the chosen number from the range
+                        subtask.independent_subtasks.append(get_subtask_by_name(subtasks,"Subtask " + chr(65 + random_number)))
+                    else:
+                        break
             subtasks.append(subtask)
         task.sub_tasks = subtasks
         task.execute_default()
