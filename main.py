@@ -3,6 +3,8 @@ import heapq
 import math
 import random
 
+FAIL = .1
+
 
 class LCM:
     def lcm(self, a, b):
@@ -110,7 +112,14 @@ class Task:
                     space -= sub_task.space
                     executing_space.append([[current_time, current_time + sub_task.configuration_time], 100])
                     current_time += sub_task.configuration_time
-                    sub_task.end_time = current_time + sub_task.execute_time
+                    if sub_task.independent_subtasks:
+                        max_subtask = max(sub_task.independent_subtasks, key=lambda subtask: subtask.end_time)
+                        if max_subtask.end_time > current_time:
+                            sub_task.end_time = max_subtask.end_time + sub_task.execute_time
+                        else:
+                            sub_task.end_time = current_time + sub_task.execute_time
+                    else:
+                        sub_task.end_time = current_time + sub_task.execute_time
                     executing_space.append([[current_time, sub_task.end_time], sub_task.space])
                     sub_task.execute_start = True
                     executing_subtasks.append(sub_task)
@@ -152,6 +161,7 @@ def get_subtask_by_name(subtask_list, name):
         if subtask.name == name:
             return subtask
     return None
+
 
 class SubTask:
     def __init__(self, task, name, configuration_time, execute_time, space):
@@ -285,10 +295,11 @@ class EDFScheduler:
 def create_random_task():
     bag_of_tasks = []
     tasks_numbers = random.randint(2, 10)
+    h = 0
     while len(bag_of_tasks) != tasks_numbers:
         period = random.randint(7, 20) * 5
         deadline = period
-        task = Task("Task " + chr(random.randint(65, 90)), period=period, deadline=deadline)
+        task = Task("Task " + chr(65 + h), period=period, deadline=deadline)
         subtasks = []
         subtasks_numbers = random.randint(1, 10)
         for i in range(subtasks_numbers):
@@ -303,14 +314,22 @@ def create_random_task():
                     if numbers_range:  # Check if there are still numbers to choose from
                         random_number = random.sample(numbers_range, 1)[0]
                         numbers_range.remove(random_number)  # Remove the chosen number from the range
-                        subtask.independent_subtasks.append(get_subtask_by_name(subtasks,"Subtask " + chr(65 + random_number)))
+                        subtask.independent_subtasks.append(
+                            get_subtask_by_name(subtasks, "Subtask " + chr(65 + random_number)))
                     else:
                         break
+            fail = random.uniform(0, 1) < FAIL
+            p = 1
+            while fail:
+                p += 1
+                fail = random.uniform(0, 1) < FAIL
+            subtask.execute_time *= p
             subtasks.append(subtask)
         task.sub_tasks = subtasks
         task.execute_default()
         if task.period > task.execution_time:
             bag_of_tasks.append(task)
+            h += 1
     return bag_of_tasks
 
 
