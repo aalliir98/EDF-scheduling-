@@ -194,6 +194,7 @@ class EDFScheduler:
         self.ready_tasks = []
         self.current_time = 0
         self.save = []
+        self.idle_time = 0
 
     def add_task(self, task):
         heapq.heappush(self.bag_of_tasks, task)
@@ -202,6 +203,7 @@ class EDFScheduler:
         ready_tasks = copy.deepcopy(self.ready_tasks)
         bag_of_tasks = copy.deepcopy(self.bag_of_tasks)
         self.current_time = 0
+        self.idle_time = 0
         # for task in bag_of_tasks:
         #     print(task)
         # print("-----------------------------------------------------------------\n")
@@ -214,6 +216,7 @@ class EDFScheduler:
                     heapq.heappush(ready_tasks, task)
             if not ready_tasks:
                 min_task = min(bag_of_tasks, key=lambda task2: task2.next_period)
+                self.idle_time += min_task.next_period - self.current_time
                 self.current_time = min_task.next_period
                 continue
             # sort to find minimum deadline
@@ -239,13 +242,14 @@ class EDFScheduler:
         self.save.append(number_of_missed_tasks)
         self.save.append(number_of_all_executed_tasks)
         self.save.append(number_of_missed_tasks * 100 / number_of_all_executed_tasks)
-        self.save.append(self.current_time)
+        self.save.append(self.idle_time)
 
     def run_advanced_non_preemptive(self, total_time):
         free_intervals = []
         ready_tasks = copy.deepcopy(self.ready_tasks)
         bag_of_tasks = copy.deepcopy(self.bag_of_tasks)
         self.current_time = 0
+        self.idle_time = 0
         # for task in bag_of_tasks:
         #     print(task)
         # print("-----------------------------------------------------------------\n")
@@ -258,6 +262,7 @@ class EDFScheduler:
                     heapq.heappush(ready_tasks, task)
             if not ready_tasks:
                 min_task = min(bag_of_tasks, key=lambda task2: task2.next_period)
+                self.idle_time += min_task.next_period - self.current_time
                 self.current_time = min_task.next_period
                 continue
             # sort to find minimum deadline
@@ -284,19 +289,19 @@ class EDFScheduler:
                 # print(f"task after execution:\n{task}")
 
             task.sub_tasks = task_copy.sub_tasks
-
             number_of_all_executed_tasks += 1
             ready_tasks.clear()
             # print("---------------------------------------------------------------\n")
         self.save.append(number_of_missed_tasks)
         self.save.append(number_of_all_executed_tasks)
         self.save.append(number_of_missed_tasks * 100 / number_of_all_executed_tasks)
-        self.save.append(self.current_time)
+        self.save.append(self.idle_time)
 
     def run_default_preemptive(self, total_time):
         ready_tasks = copy.deepcopy(self.ready_tasks)
         bag_of_tasks = copy.deepcopy(self.bag_of_tasks)
         self.current_time = 0
+        self.idle_time = 0
         # for task in bag_of_tasks:
         #     print(task)
         # print("-----------------------------------------------------------------\n")
@@ -309,6 +314,7 @@ class EDFScheduler:
                     heapq.heappush(ready_tasks, task)
             if not ready_tasks:
                 min_task = min(bag_of_tasks, key=lambda task2: task2.next_period)
+                self.idle_time += min_task.next_period - self.current_time
                 self.current_time = min_task.next_period
                 continue
             # sort to find minimum deadline
@@ -345,13 +351,14 @@ class EDFScheduler:
         self.save.append(number_of_missed_tasks)
         self.save.append(number_of_all_executed_tasks)
         self.save.append(number_of_missed_tasks * 100 / number_of_all_executed_tasks)
-        self.save.append(self.current_time)
+        self.save.append(self.idle_time)
 
     def run_advanced_preemptive(self, total_time):
         free_intervals = []
         ready_tasks = copy.deepcopy(self.ready_tasks)
         bag_of_tasks = copy.deepcopy(self.bag_of_tasks)
         self.current_time = 0
+        self.idle_time = 0
         # for task in bag_of_tasks:
         #     print(task)
         # print("-----------------------------------------------------------------\n")
@@ -364,6 +371,7 @@ class EDFScheduler:
                     heapq.heappush(ready_tasks, task)
             if not ready_tasks:
                 min_task = min(bag_of_tasks, key=lambda task2: task2.next_period)
+                self.idle_time += min_task.next_period - self.current_time
                 self.current_time = min_task.next_period
                 continue
             # sort to find minimum deadline
@@ -410,12 +418,13 @@ class EDFScheduler:
         self.save.append(number_of_missed_tasks)
         self.save.append(number_of_all_executed_tasks)
         self.save.append(number_of_missed_tasks * 100 / number_of_all_executed_tasks)
-        self.save.append(self.current_time)
+        self.save.append(self.idle_time)
 
     def run_default_preemptive2(self, total_time):
         ready_tasks = copy.deepcopy(self.ready_tasks)
         bag_of_tasks = copy.deepcopy(self.bag_of_tasks)
         self.current_time = 0
+        self.idle_time = 0
         # for task in bag_of_tasks:
         #     print(task)
         # print("-----------------------------------------------------------------\n")
@@ -428,6 +437,7 @@ class EDFScheduler:
                     heapq.heappush(ready_tasks, task)
             if not ready_tasks:
                 min_task = min(bag_of_tasks, key=lambda task2: task2.next_period)
+                self.idle_time += min_task.next_period - self.current_time
                 self.current_time = min_task.next_period
                 continue
             # sort to find minimum deadline
@@ -466,13 +476,14 @@ class EDFScheduler:
         self.save.append(number_of_missed_tasks)
         self.save.append(number_of_all_executed_tasks)
         self.save.append(number_of_missed_tasks * 100 / number_of_all_executed_tasks)
-        self.save.append(self.current_time)
+        self.save.append(self.idle_time)
 
     def run_advanced_preemptive2(self, total_time):
         free_intervals = []
         ready_tasks = copy.deepcopy(self.ready_tasks)
         bag_of_tasks = copy.deepcopy(self.bag_of_tasks)
         self.current_time = 0
+        self.idle_time = 0
         # for task in bag_of_tasks:
         #     print(task)
         # print("-----------------------------------------------------------------\n")
@@ -485,6 +496,7 @@ class EDFScheduler:
                     heapq.heappush(ready_tasks, task)
             if not ready_tasks:
                 min_task = min(bag_of_tasks, key=lambda task2: task2.next_period)
+                self.idle_time += min_task.next_period - self.current_time
                 self.current_time = min_task.next_period
                 continue
             # sort to find minimum deadline
@@ -533,7 +545,7 @@ class EDFScheduler:
         self.save.append(number_of_missed_tasks)
         self.save.append(number_of_all_executed_tasks)
         self.save.append(number_of_missed_tasks * 100 / number_of_all_executed_tasks)
-        self.save.append(self.current_time)
+        self.save.append(self.idle_time)
 
     def handle_middle_tasks(self, bag_of_tasks, task, number_of_all_executed_tasks, number_of_missed_tasks):
         middle_tasks = []
@@ -696,11 +708,11 @@ def main():
         print(f"missed default:  {scheduler.save[0]}")
         print(f"all default: {scheduler.save[1]}")
         print(f"percentage default: {scheduler.save[2]}")
-        print(f"time default: {scheduler.save[3]}")
+        print(f"---time default: {scheduler.save[3]}")
         print(f"missed advance: {scheduler.save[4]}")
         print(f"all advance: {scheduler.save[5]}")
         print(f"percentage advance: {scheduler.save[6]}")
-        print(f"time advance: {scheduler.save[7]}")
+        print(f"---time advance: {scheduler.save[7]}")
         print("------------------------------------------------------")
 
 
