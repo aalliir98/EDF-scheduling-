@@ -647,12 +647,19 @@ def create_random_task():
                     else:
                         break
             fail = random.uniform(0, 1) < FAIL
-            p = 1
+            p = 0
             while fail:
                 p += 1
                 fail = random.uniform(0, 1) < FAIL
-            subtask.execute_time *= p
             subtasks.append(subtask)
+            subtask_fail2 = subtask
+            for k in range(p):
+                subtask_fail = copy.deepcopy(subtask)
+                subtask_fail.name += chr(49 + k)
+                subtask_fail.independent_subtasks.append(subtask_fail2)
+                subtask_fail2 = subtask_fail
+                subtasks.append(subtask_fail)
+
         task.sub_tasks = subtasks
         task.execute_default()
         if task.period > task.execution_time:
